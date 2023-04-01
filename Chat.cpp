@@ -1,6 +1,8 @@
 #include <iostream>
+#include <fstream>
 #include "Chat.h"
 #include "User.h"
+#include "Trie.h"
 #include <locale.h>
 #include <conio.h>
 #include <vector>
@@ -91,7 +93,7 @@ void Chat::showAllUsersName() const
 		uint32_t Spades1 = 0x2640;
 		if (user.getUserGender()=="Male")
 		{
-			std::wcout << (wchar_t)Spades<<" ";
+			std::wcout << (wchar_t)Spades<< " ";
 		}
 		else
 		{
@@ -154,7 +156,7 @@ void Chat::login()
 	//std::string password;
 	std::vector <char> password;
 	char operation;
-	char ñ;
+	char c;
 	do
 	{
 		std::cout << "Login: ";
@@ -162,9 +164,9 @@ void Chat::login()
 		_currentUser = getUserByLogin(login);
 		std::cout << "Password: ";
 		//std::cin >> password;
-		while ((ñ = _getch()) != '\r')
+		while ((c = _getch()) != '\r')
 		{
-			password.push_back(ñ);
+			password.push_back(c);
 			_putch('*');
 		}
 		std::cout << "\n";
@@ -181,6 +183,8 @@ void Chat::login()
 		}
 	} while (!_currentUser);
 }
+
+
 
 void Chat::showChat() const
 {
@@ -211,10 +215,43 @@ void Chat::showChat() const
 
 void Chat::addMessage()
 {
-	std::string to, text;
+	Trie* t = new Trie;
+	std::string input_string;
+	bool is_open = true;
+	std::ifstream input("wordList.txt");
+	if (!(input.is_open()))
+	{
+		std::cout << "Dictionary was not open!" << std::endl;
+		is_open = false;
+	}
 
+	while (!input.eof()) {
+
+		getline(input, input_string);
+		t->insertWord(input_string);
+
+	}
+	
+	std::string to, text;
+	char a=0;
 	std::cout << "To (name or All): ";
 	std::cin >> to;
+	if (is_open)
+	{
+		std::cout << "Use dictionary? any key-YES, (0)-NO ";
+		if (std::cin >> a && is_open && a != '0')
+		{
+			bool possible = 0;
+			std::cout << "Enter prefix: ";
+			std::string prf;
+			std::cin >> prf;
+			
+			t->autoComplete(prf, possible);
+			input.close();
+			delete t;
+		}
+	}
+	
 	std::cout << "Text: ";
 	std::cin.ignore();
 	std::getline(std::cin, text);
@@ -227,7 +264,7 @@ void Chat::addMessage()
 
 	if (to == "All" || to == "all")
 		_messages.push_back(Message{ _currentUser->getUserLogin(), "All", text });
-		
+
 	else
 		_messages.push_back(Message{ _currentUser->getUserLogin(), getUserByName(to)->getUserLogin(), text });
 }
@@ -241,14 +278,14 @@ void Chat::deleteLastMessage()
 		if ((_currentUser->getUserName() == "Admin") || (s.getFrom() == _currentUser->getUserLogin()))
 		{
 			_messages.pop_back();
-			std::cout << endl << "Message was deleted." << endl;
+			std::cout << std::endl << "Message was deleted." << std::endl;
 		}
 		else
 		{
-			std::cout << "Not enough rights to delete." << endl;
+			std::cout << "Not enough rights to delete." << std::endl;
 		}
 	}
-	std::cout << "Chat is empty!" << endl;
+	std::cout << "Chat is empty!" << std::endl;
 }
 
 std::shared_ptr<User> Chat::getUserByLogin(const std::string& login) const
